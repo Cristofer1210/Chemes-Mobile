@@ -1,48 +1,111 @@
 import { Product } from '../models/Product';
+import { supabase } from '../lib/supabase';
 
-const STORAGE_KEY = 'chemes_products_v1';
+type ProductRow = {
+  id?: number;
+  codigo: string;
+  descripcion: string;
+  desc_adicional?: string | null;
+  rubro?: string | null;
+  sub_rubro?: string | null;
+  sucursal?: string | null;
+  saldo?: number | null;
+  deposito?: string | null;
+  pendiente?: number | null;
+  lista_1?: number | null;
+  lista_2?: number | null;
+  lista_3?: number | null;
+  lista_4?: number | null;
+  lista_6?: number | null;
+  created_at?: string;
+};
+
+function toDbRow(item: Product): ProductRow {
+  return {
+    codigo: item.CODIGO,
+    descripcion: item.DESCRIPCION,
+    desc_adicional: item.DESC_ADICIONAL ?? null,
+    rubro: item.RUBRO ?? null,
+    sub_rubro: item.SUB_RUBRO ?? null,
+    sucursal: item.SUCURSAL ?? null,
+    saldo: item.SALDO ?? null,
+    deposito: item.DEPOSITO ?? null,
+    pendiente: item.PENDIENTE ?? null,
+    lista_1: item.LISTA_1 ?? null,
+    lista_2: item.LISTA_2 ?? null,
+    lista_3: item.LISTA_3 ?? null,
+    lista_4: item.LISTA_4 ?? null,
+    lista_6: item.LISTA_6 ?? null,
+  };
+}
+
+function fromDbRow(row: ProductRow): Product {
+  return {
+    CODIGO: row.codigo,
+    DESCRIPCION: row.descripcion,
+    DESC_ADICIONAL: row.desc_adicional ?? null,
+    RUBRO: row.rubro ?? null,
+    SUB_RUBRO: row.sub_rubro ?? null,
+    SUCURSAL: row.sucursal ?? null,
+    SALDO: row.saldo ?? null,
+    DEPOSITO: row.deposito ?? null,
+    PENDIENTE: row.pendiente ?? null,
+    LISTA_1: row.lista_1 ?? null,
+    LISTA_2: row.lista_2 ?? null,
+    LISTA_3: row.lista_3 ?? null,
+    LISTA_4: row.lista_4 ?? null,
+    LISTA_6: row.lista_6 ?? null,
+  };
+}
 
 export async function initDB() {
-  if (!localStorage.getItem(STORAGE_KEY)) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-  }
+  return;
 }
 
-function readAll(): Product[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Product[];
-  } catch (e) {
-    console.error('readAll parse', e);
-    return [];
-  }
-}
+export async function bulkInsertProducts(items: Product[]): Promise<{ count: number; firstRecord: Product | null }> {
+  if (!items || items.length === 0) return { count: 0, firstRecord: null };
+  const rows = items.map(toDbRow);
+  const codes = rows.map(row => row.codigo);
 
-function writeAll(items: Product[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
+  const { error: deleteError } = await supabase
+    .from('productos')
+    .delete()
+    .in('codigo', codes);
 
-export async function bulkInsertProducts(items: Product[]) {
-  if (!items || items.length === 0) return;
-  const existing = readAll();
-  const map = new Map<string, Product>();
-  for (const e of existing) map.set(e.CODIGO, e);
-  for (const it of items) map.set(it.CODIGO, it);
-  const merged = Array.from(map.values());
-  writeAll(merged);
+  if (deleteError) throw deleteError;
+
+  const { data, error } = await supabase
+    .from('productos')
+    .insert(rows)
+    .select('*');
+
+  if (error) throw error;
+
+  const mapped = (data ?? []).map(row => fromDbRow(row as ProductRow));
+  return { count: mapped.length, firstRecord: mapped[0] ?? null };
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  const all = readAll();
-  return all.slice(0, 1000);
+  const { data, error } = await supabase
+    .from('productos')
+    .select('*')
+    .order('codigo', { ascending: true })
+    .limit(1000);
+
+  if (error) throw error;
+  return ((data ?? []) as ProductRow[]).map(fromDbRow);
 }
 
 export async function searchProducts(q: string): Promise<Product[]> {
   if (!q) return [];
-  const s = q.toLowerCase();
-  const all = readAll();
-  const res = all.filter(p => (p.CODIGO || '').toLowerCase().includes(s) || (p.DESCRIPCION || '').toLowerCase().includes(s));
-  return res.slice(0, 500);
+  const s = q.trim();
+  const { data, error } = await supabase
+    .from('productos')
+    .select('*')
+    .or(`codigo.ilike.%${s}%,descripcion.ilike.%${s}%`)
+    .limit(500);
+
+  if (error) throw error;
+  return ((data ?? []) as ProductRow[]).map(fromDbRow);
 }
 

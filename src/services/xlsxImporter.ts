@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Product } from '../models/Product';
+import { bulkInsertProducts } from './sqliteService';
 
 function normalizeHeader(h: string) {
   return h
@@ -86,6 +87,9 @@ export async function importXLSXFromFile(file: File): Promise<{ count: number; i
   const items: Product[] = raw.map(r => mapRow(r, headerMap));
   console.log('Primer registro leído del XLSX:', raw[0]);
   console.log('Primer producto mapeado:', items[0]);
+  const inserted = await bulkInsertProducts(items);
+  console.log('Registros insertados en Supabase:', inserted.count);
+  console.log('Primer registro insertado en Supabase:', inserted.firstRecord);
   return { count: items.length, items };
 }
 
@@ -121,5 +125,8 @@ export async function importXLSXFromUri(uri: string): Promise<{ count: number; i
   const items: Product[] = raw.map(r => mapRow(r, headerMap));
   console.log('Primer registro leído del XLSX:', raw[0]);
   console.log('Primer producto mapeado:', items[0]);
+  const inserted = await bulkInsertProducts(items);
+  console.log('Registros insertados en Supabase:', inserted.count);
+  console.log('Primer registro insertado en Supabase:', inserted.firstRecord);
   return { count: items.length, items };
 }

@@ -1,6 +1,6 @@
 import create from 'zustand';
 import { Product } from '../models/Product';
-import { initDB, bulkInsertProducts, getAllProducts } from '../services/sqliteService';
+import { initDB, getAllProducts } from '../services/sqliteService';
 
 type State = {
   products: Product[];
@@ -17,10 +17,6 @@ export const useProductsStore = create<State>((set, get) => ({
   },
   importAndSave: async (items: Product[]) => {
     await initDB();
-    await bulkInsertProducts(items);
-    console.log('localStorage raw:', localStorage.getItem('chemes_products_v1'));
-    const parsed = JSON.parse(localStorage.getItem('chemes_products_v1') || '[]');
-    console.log('primer registro guardado en localStorage:', parsed[0]);
     const all = await getAllProducts();
     console.log('productos.length:', all.length);
     console.log('productos[0]:', all[0]);

@@ -7,7 +7,7 @@ export default function ImportPage(){
   const store = useProductsStore()
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
+    const f = e.currentTarget.files?.[0]
     if (!f) return
     try{
       const { items } = await importXLSXFromFile(f)
@@ -15,10 +15,10 @@ export default function ImportPage(){
       console.log('Primer producto:', items[0])
       await store.importAndSave(items)
       setCount(items.length)
-      alert(`Importados ${items.length} items`)
+      console.log(`Importados ${items.length} items`)
     }catch(err:any){
       console.error(err)
-      alert('Error importando: ' + (err.message||String(err)))
+      console.error('Error importando:', err.message || String(err))
     }
   }
 

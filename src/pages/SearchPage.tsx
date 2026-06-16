@@ -11,10 +11,10 @@ export default function SearchPage(){
   const handleSearch = async () => {
     if (!q || q.trim().length === 0) return setResults([])
     const all = await getAllProducts()
-    console.log('productos.length:', all.length)
-    console.log('productos[0]:', all[0])
+    console.log('lectura desde Supabase - productos.length:', all.length)
+    console.log('lectura desde Supabase - productos[0]:', all[0])
     const r = await searchProducts(q.trim())
-    console.log('resultado de búsqueda:', r[0])
+    console.log('resultado de búsqueda remota:', r[0])
     console.log('resultados.length:', r.length)
     setResults(r)
   }
@@ -22,7 +22,7 @@ export default function SearchPage(){
   return (
     <div>
       <div className="card">
-        <input placeholder="Buscar por código o descripción" value={q} onChange={e => setQ((e.target as HTMLInputElement).value)} style={{padding:8,width:'100%'}} />
+        <input placeholder="Buscar por código o descripción" value={q} onChange={e => setQ(e.currentTarget.value)} style={{padding:8,width:'100%'}} />
         <div style={{height:12}} />
         <button className="btn" onClick={handleSearch}>Buscar</button>
       </div>

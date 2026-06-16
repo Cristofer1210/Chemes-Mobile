@@ -4,7 +4,9 @@
     "module": "esnext",
     "jsx": "react",
     "lib": [
-      "es2020"
+      "es2020",
+      "dom",
+      "dom.iterable"
     ],
     "allowJs": true,
     "skipLibCheck": true,
